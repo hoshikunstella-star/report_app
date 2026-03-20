@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>議事録</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <header class="header">
+      <div class="header-main">
+        <div class="title" data-i18n-key="title">議事録作成補助ツール</div>
+      </div>
+      <div class="header-lang">
+        <span>言語選択：</span>
+        <select id="uiLangSelect">
+          <option value="ja">日本語</option>
+          <option value="en">English</option>
+        </select>
+      </div>
+    </header>
+
+    <div class="header-row">
+      <div class="actionGroup">
+        <button id="btnRecord" class="btn" data-i18n-key="btnRecord">録音</button>
+        <div id="recordStatus" class="recordStatus">
+          <div class="recordIcon"></div>
+          <div class="recordWave">
+            <span></span><span></span><span></span><span></span><span></span>
+          </div>
+        </div>
+      </div>
+      <div class="actionGroup">
+        <button id="btnPick" class="btn" data-i18n-key="btnPick">音声/動画ファイル選択</button>
+      </div>
+    </div>
+
+    <nav class="tabs">
+      <button id="tabTranscribe" class="tab active" data-i18n-key="tabTranscribe">文字起こし</button>
+      <button id="tabSummary" class="tab" data-i18n-key="tabSummary">要約</button>
+      <button id="tabHistory" class="tab" data-i18n-key="tabHistory">履歴</button>
+    </nav>
+
+    <main class="main">
+
+      <!-- 左パネル：ログ（文字起こしタブ時のみ表示） -->
+      <section id="panelTranscribe" class="panel">
+        <div class="panelTitle" data-i18n-key="selectedAudio">選択中の音声</div>
+        <div id="audioPath" class="mono muted">未選択</div>
+        <div class="panelTitle mt" data-i18n-key="logTitle">ログ</div>
+        <pre id="log" class="log"></pre>
+      </section>
+
+      <!-- 右パネル：文字起こし・エクスポート（文字起こしタブ時のみ表示） -->
+      <section id="panelText" class="editor">
+        <div class="panelTitleRow">
+          <div class="panelTitle" data-i18n-key="transcriptTitle">文字起こし結果（編集可）</div>
+          <div class="transcribeControls">
+            <label class="toggle inlineToggle">
+              <input id="chkDiarize" type="checkbox" />
+              <span data-i18n-key="speakerDiarization">話者分離</span>
+            </label>
+            <button id="btnTranscribe" class="btn primary" disabled data-i18n-key="btnTranscribe">文字起こし</button>
+          </div>
+        </div>
+        <div class="editorBody">
+          <textarea
+            id="text"
+            class="textarea transcriptArea"
+            placeholder="ここに文字起こし結果が表示されます"
+          ></textarea>
+          <div class="editorFooter">
+            <div class="exportMenu">
+              <button id="btnExport" class="btn" disabled data-i18n-key="btnExport">エクスポート ▾</button>
+              <div id="exportDropdown" class="dropdown" hidden>
+                <button data-fmt="txt">テキスト (.txt)</button>
+                <button data-fmt="pdf">PDF (.pdf)</button>
+                <button data-fmt="word">Word (.docx)</button>
+                <button data-fmt="csv">CSV (.csv)</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 要約パネル（要約タブ時のみ表示） -->
+      <section id="panelSummary" class="panel widePanel" hidden>
+        <div class="panelTitleRow">
+          <div class="panelTitle" data-i18n-key="summaryTitle">AI要約結果（編集可）</div>
+          <div class="summarySectionActions">
+            <button id="btnSummarize" class="btn primary" disabled data-i18n-key="btnSummarize">AI要約</button>
+            <button id="btnSummaryCopy" class="btn" disabled data-i18n-key="btnSummaryCopy">コピー</button>
+          </div>
+        </div>
+        <textarea
+          id="summaryText"
+          class="textarea summaryArea"
+          placeholder="AI要約ボタンを押すと要約結果が表示されます"
+        ></textarea>
+      </section>
+
+      <!-- 履歴パネル（履歴タブ時のみ表示） -->
+      <section id="panelHistory" class="panel widePanel" hidden>
+        <div class="panelTitleRow">
+          <div class="panelTitle" data-i18n-key="historyTitle">履歴</div>
+          <button id="btnBulkDownload" class="btn" data-i18n-key="btnBulkDownload">一括ダウンロード</button>
+        </div>
+        <ul id="historyList" class="historyList"></ul>
+      </section>
+
+    </main>
+
+    <!-- ログインモーダル -->
+    <div id="loginModal" class="modal">
+      <div class="modal-box">
+        <div class="modal-title">ログイン</div>
+        <input id="loginEmail" class="modal-input" type="email" placeholder="メールアドレス" autocomplete="email" />
+        <input id="loginPassword" class="modal-input" type="password" placeholder="パスワード" autocomplete="current-password" />
+        <div class="modal-actions">
+          <button id="btnLogin" class="btn primary">ログイン</button>
+        </div>
+        <div id="loginError" class="muted" style="font-size:12px;min-height:18px;"></div>
+      </div>
+    </div>
+
+    <!-- 置換モーダル -->
+    <div id="replaceModal" class="modal" hidden>
+      <div class="modal-box">
+        <div class="modal-title">置換 (Ctrl+F)</div>
+        <input id="findInput" class="modal-input" placeholder="検索..." />
+        <input id="replaceInput" class="modal-input" placeholder="置換後..." />
+        <div class="modal-actions">
+          <button id="btnReplaceOne" class="btn">置換</button>
+          <button id="btnReplaceAll" class="btn primary">すべて置換</button>
+          <button id="btnCloseReplace" class="btn">閉じる</button>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+    <script src="./renderer.js"></script>
+  </body>
+</html>

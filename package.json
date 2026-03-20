@@ -1,0 +1,40 @@
+{
+  "name": "gijiroku-desktop",
+  "version": "0.2.0",
+  "private": true,
+  "description": "Windowsデスクトップ議事録作成補助ツール（音声→文字起こし）",
+  "main": "app/main.js",
+  "scripts": {
+    "dev": "electron .",
+    "start": "electron .",
+    "build:win": "electron-builder --win"
+  },
+  "devDependencies": {
+    "electron": "^37.2.4",
+    "electron-builder": "^26.8.1"
+  },
+  "build": {
+    "appId": "com.example.gijiroku-helper",
+    "productName": "議事録作成補助ツール",
+    "files": [
+      "app/**/*",
+      "stt/**/*",
+      "package.json"
+    ],
+    "directories": {
+      "output": "dist"
+    },
+    "asar": false,
+    "win": {
+      "target": [
+        "nsis",
+        "portable"
+      ]
+    }
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.79.0",
+    "docx": "^9.6.1",
+    "dotenv": "^17.3.1"
+  }
+}

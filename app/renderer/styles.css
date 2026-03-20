@@ -1,0 +1,504 @@
+:root {
+  --bg: #0b0f19;
+  --panel: #11182a;
+  --panel2: #0e1526;
+  --text: #e8eefc;
+  --muted: #a9b3cc;
+  --border: rgba(255, 255, 255, 0.08);
+  --primary: #6ea8ff;
+  --primary2: #2f73ff;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+body {
+  margin: 0;
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  background: radial-gradient(1000px 700px at 20% 0%, rgba(110, 168, 255, 0.15), transparent),
+    radial-gradient(900px 700px at 80% 0%, rgba(47, 115, 255, 0.12), transparent),
+    var(--bg);
+  color: var(--text);
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ===== ヘッダー ===== */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(10, 14, 26, 0.7);
+  backdrop-filter: blur(10px);
+  flex-shrink: 0;
+}
+
+.title {
+  font-weight: 700;
+  letter-spacing: 0.3px;
+}
+
+.header-main {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.header-lang {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.header-row {
+  display: flex;
+  gap: 12px;
+  padding: 8px 16px;
+  background: rgba(10, 14, 26, 0.7);
+  flex-shrink: 0;
+}
+
+.actionGroup {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.03);
+  background-color: slategrey;
+}
+
+/* ===== タブ ===== */
+.tabs {
+  display: flex;
+  gap: 8px;
+  padding: 6px 14px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(10, 14, 26, 0.7);
+  flex-shrink: 0;
+}
+
+.tab {
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  padding: 8px 12px;
+  cursor: pointer;
+  border-radius: 999px;
+  font-size: 13px;
+}
+
+.tab.active {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text);
+}
+
+/* ===== メイン 2カラムグリッド ===== */
+.main {
+  display: grid;
+  grid-template-columns: 380px 1fr;
+  gap: 14px;
+  padding: 14px;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* ===== パネル共通 ===== */
+.panel,
+.editor {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent),
+    radial-gradient(900px 600px at 0% 0%, rgba(110, 168, 255, 0.12), transparent),
+    var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 14px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* 全幅パネル（要約・履歴タブ） */
+.widePanel {
+  grid-column: 1 / -1;
+}
+
+/* ===== 左パネル（ログ） ===== */
+.log {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  background: var(--panel2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px;
+  margin: 0;
+  color: #dbe6ff;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+/* ===== 右パネル（エディタ） ===== */
+.panelTitleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+  flex-shrink: 0;
+}
+
+.transcribeControls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.editorBody {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  gap: 8px;
+}
+
+.transcriptArea {
+  flex: 2;
+  min-height: 0;
+  height: auto;
+}
+
+/* AI要約セクション */
+.summarySection {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  gap: 6px;
+}
+
+.summarySectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.summarySectionActions {
+  display: flex;
+  gap: 6px;
+}
+
+.summaryArea {
+  flex: 1;
+  min-height: 0;
+  height: auto;
+  resize: none;
+}
+
+.editorFooter {
+  display: flex;
+  justify-content: flex-end;
+  flex-shrink: 0;
+}
+
+/* ===== 履歴パネル ===== */
+.historyList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.historyItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  font-size: 13px;
+}
+
+.historyItem-main {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+}
+
+.historyItem-name {
+  min-width: 0;
+  flex: 1;
+}
+
+.historyItem-name input {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.2);
+  color: var(--text);
+  padding: 2px 4px;
+  font-size: 13px;
+}
+
+.historyItem-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.historyItem-actions .btn {
+  padding: 4px 6px;
+  font-size: 11px;
+}
+
+/* ===== 共通パーツ ===== */
+.panelTitle {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: var(--muted);
+}
+
+.mt {
+  margin-top: 14px;
+}
+
+.mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  font-size: 12px;
+  margin-top: 10px;
+  flex-shrink: 0;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.textarea {
+  width: 100%;
+  height: auto;
+  resize: none;
+  background: var(--panel2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  color: var(--text);
+  padding: 12px;
+  outline: none;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.textarea:focus {
+  border-color: rgba(110, 168, 255, 0.3);
+}
+
+.btn {
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
+  padding: 9px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 13px;
+  white-space: nowrap;
+  background-color: cadetblue;
+}
+
+.btn:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn.primary {
+  border-color: rgba(110, 168, 255, 0.35);
+  background: linear-gradient(180deg, rgba(110, 168, 255, 0.25), rgba(47, 115, 255, 0.12));
+}
+
+.btn.primary:hover {
+  background: linear-gradient(180deg, rgba(110, 168, 255, 0.3), rgba(47, 115, 255, 0.16));
+}
+
+.toggle {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  user-select: none;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.toggle input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--primary);
+}
+
+.inlineToggle {
+  padding: 4px 8px;
+}
+
+/* ===== エクスポートドロップダウン ===== */
+.exportMenu {
+  position: relative;
+  display: inline-block;
+}
+
+.dropdown {
+  position: absolute;
+  bottom: calc(100% + 4px);
+  right: 0;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 4px;
+  min-width: 160px;
+  z-index: 100;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+}
+
+.dropdown button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: none;
+  color: var(--text);
+  padding: 8px 12px;
+  border-radius: 7px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.dropdown button:hover {
+  background: rgba(255, 255, 255, 0.07);
+}
+
+/* ===== 録音ステータス ===== */
+.recordStatus {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.recordIcon {
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  background: #ff4b5c;
+  box-shadow: 0 0 8px rgba(255, 75, 92, 0.8);
+}
+
+.recordIcon.active {
+  animation: recordPulse 1s infinite;
+}
+
+.recordWave {
+  display: none;
+  align-items: flex-end;
+  gap: 2px;
+  height: 18px;
+}
+
+.recordWave.active {
+  display: inline-flex;
+}
+
+.recordWave span {
+  width: 3px;
+  background: var(--primary);
+  border-radius: 999px;
+  animation: wave 1s infinite ease-in-out;
+}
+
+.recordWave span:nth-child(2) { animation-delay: 0.1s; }
+.recordWave span:nth-child(3) { animation-delay: 0.2s; }
+.recordWave span:nth-child(4) { animation-delay: 0.3s; }
+.recordWave span:nth-child(5) { animation-delay: 0.4s; }
+
+/* ===== モーダル ===== */
+.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+}
+
+.modal[hidden] {
+  display: none;
+}
+
+.modal-box {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 20px;
+  min-width: 340px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.modal-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.modal-input {
+  background: var(--panel2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  padding: 8px 10px;
+  font-size: 13px;
+  outline: none;
+  width: 100%;
+}
+
+.modal-input:focus {
+  border-color: var(--primary);
+}
+
+.modal-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+/* ===== キーフレーム ===== */
+@keyframes recordPulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50%       { transform: scale(1.2); opacity: 0.7; }
+}
+
+@keyframes wave {
+  0%, 100% { height: 4px; }
+  50%       { height: 18px; }
+}
