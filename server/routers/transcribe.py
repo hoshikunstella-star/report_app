@@ -5,10 +5,16 @@ import os
 import json
 import tempfile
 from fastapi import APIRouter, File, Form, UploadFile, Depends, HTTPException
-from faster_whisper import WhisperModel
 from ..auth_utils import get_current_user
 
 router = APIRouter()
+
+# faster-whisper（ctranslate2 依存）はオプション扱いにして起動クラッシュを防ぐ
+try:
+    from faster_whisper import WhisperModel
+    _HAS_WHISPER = True
+except Exception:
+    _HAS_WHISPER = False
 
 # モデルのシングルトン（初回リクエスト時にロード）
 _whisper_model = None
@@ -16,6 +22,8 @@ _whisper_model = None
 
 def _get_whisper():
     global _whisper_model
+    if not _HAS_WHISPER:
+        raise HTTPException(status_code=501, detail="faster-whisper がインストールされていません。")
     if _whisper_model is None:
         _whisper_model = WhisperModel("small", device="cpu", compute_type="int8")
     return _whisper_model
