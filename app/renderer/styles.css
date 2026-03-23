@@ -122,6 +122,11 @@ body {
   color: var(--text);
 }
 
+.tab.tab-disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
 /* ===== メイン 2カラムグリッド ===== */
 .main {
   display: grid;

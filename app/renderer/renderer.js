@@ -578,7 +578,10 @@ btnRecord.addEventListener("click", toggleRecording);
 btnTranscribe.addEventListener("click", transcribe);
 btnSummarize.addEventListener("click", summarize);
 tabTranscribe.addEventListener("click", () => updateTabs("transcribe"));
-tabSummary.addEventListener("click", () => updateTabs("summary"));
+tabSummary.addEventListener("click", () => {
+  if (!isPaidPlan) return;
+  updateTabs("summary");
+});
 tabHistory.addEventListener("click", () => {
   updateTabs("history");
   refreshHistory();
@@ -636,14 +639,22 @@ function applyPaidUI(email, expiresAt) {
   const dateStr = expiresAt ? new Date(expiresAt).toLocaleDateString("ja-JP") : "";
   planLabel.textContent = `有料プラン（${email}　期限: ${dateStr}）`;
   btnSwitchPlan.textContent = "ログアウト";
+  tabSummary.classList.remove("tab-disabled");
+  tabSummary.title = "";
   btnSummarize.disabled = elText.value.trim().length === 0;
+  btnSummaryCopy.disabled = summaryText.value.trim().length === 0;
 }
 
 function applyFreeUI() {
   isPaidPlan = false;
   planLabel.textContent = "無料プラン";
   btnSwitchPlan.textContent = "有料プランに切り替え";
+  tabSummary.classList.add("tab-disabled");
+  tabSummary.title = "有料プランが必要です";
   btnSummarize.disabled = true;
+  btnSummaryCopy.disabled = true;
+  // 要約タブが開いていた場合は文字起こしタブに戻す
+  if (!panelSummary.hidden) updateTabs("transcribe");
 }
 
 // ======= ログイン =======
