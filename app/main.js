@@ -310,31 +310,7 @@ ipcMain.handle("transcribe-audio", async (_event, { audioPath, options = {} }) =
   if (!audioPath) throw new Error("audioPath is required");
   const diarize = Boolean(options?.diarize);
 
-  // サーバーモード
-  if (API_BASE_URL) {
-    if (!authToken) throw new Error("ログインが必要です。");
-    const audioData = await fs.promises.readFile(audioPath);
-    const blob = new Blob([audioData]);
-    const form = new FormData();
-    form.append("file", blob, path.basename(audioPath));
-    form.append("diarize", diarize ? "true" : "false");
-    const res = await fetch(`${API_BASE_URL}/transcribe/`, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${authToken}` },
-      body: form
-    });
-    if (!res.ok) {
-      const body = await res.text().catch(() => "");
-      let detail = res.statusText || "";
-      try { detail = JSON.parse(body).detail || detail; } catch {}
-      throw new Error(`文字起こしに失敗しました。(HTTP ${res.status}: ${detail || body.slice(0, 200)})`);
-    }
-    const data = await res.json();
-    appendLog("info", "transcribe-audio: server mode success");
-    return { text: data.text, stderr: "" };
-  }
-
-  // ローカルモード
+  // ローカルモード（文字起こし・話者分離は常にローカル処理）
   const scriptPlainPath = path.join(__dirname, "..", "stt", "transcribe.py");
   const scriptSegmentsPath = path.join(__dirname, "..", "stt", "transcribe_segments.py");
   const scriptDiarizePath = path.join(__dirname, "..", "stt", "diarize.py");
