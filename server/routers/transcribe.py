@@ -27,7 +27,7 @@ def _get_whisper():
     if not _HAS_WHISPER:
         raise HTTPException(status_code=501, detail=f"faster-whisper がインストールされていません。原因: {_WHISPER_IMPORT_ERROR}")
     if _whisper_model is None:
-        _whisper_model = WhisperModel("small", device="cpu", compute_type="int8")
+        _whisper_model = WhisperModel("tiny", device="cpu", compute_type="int8")
     return _whisper_model
 
 
