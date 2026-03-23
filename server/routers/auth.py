@@ -31,7 +31,7 @@ class RegisterRequest(BaseModel):
 async def login(req: LoginRequest):
     # usersテーブルからメールアドレスで検索
     try:
-        res = supabase.table("users").select("*").eq("USER_MAILE_ADRESS", req.email).execute()
+        res = supabase.table("users").select("*").eq("user_maile_adress", req.email).execute()
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"DB エラー: {str(e)}")
 
@@ -41,14 +41,14 @@ async def login(req: LoginRequest):
 
     user = rows[0]
 
-    if not user.get("VALID_FLAG", False):
+    if not user.get("valid_flag", False):
         raise HTTPException(status_code=403, detail="このアカウントは無効です。")
 
-    if not bcrypt.verify(req.password, user["USER_PASS"]):
+    if not bcrypt.verify(req.password, user["user_pass"]):
         raise HTTPException(status_code=401, detail="メールアドレスまたはパスワードが正しくありません。")
 
     # 有料プラン確認
-    exp_raw = user.get("EXPIRATION_DATE")
+    exp_raw = user.get("expiration_date")
     if not exp_raw:
         raise HTTPException(status_code=403, detail="有料プランではありません。")
 
@@ -65,16 +65,16 @@ async def login(req: LoginRequest):
     # JWT 生成（30日有効）
     token_exp = now + timedelta(days=JWT_EXPIRE_DAYS)
     payload = {
-        "sub": str(user["USER_ID"]),
-        "email": user["USER_MAILE_ADRESS"],
+        "sub": str(user["user_id"]),
+        "email": user["user_maile_adress"],
         "exp": token_exp,
     }
     token = jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
 
     return {
         "access_token": token,
-        "user_id": str(user["USER_ID"]),
-        "email": user["USER_MAILE_ADRESS"],
+        "user_id": str(user["user_id"]),
+        "email": user["user_maile_adress"],
         "expiration_date": expiration.isoformat(),
     }
 
@@ -83,7 +83,7 @@ async def login(req: LoginRequest):
 async def register(req: RegisterRequest):
     # メールアドレス重複チェック
     try:
-        res = supabase.table("users").select("USER_ID").eq("USER_MAILE_ADRESS", req.email).execute()
+        res = supabase.table("users").select("user_id").eq("user_maile_adress", req.email).execute()
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"DB エラー: {str(e)}")
 
@@ -95,13 +95,13 @@ async def register(req: RegisterRequest):
 
     try:
         supabase.table("users").insert({
-            "USER_NAME": req.name,
-            "USER_PASS": hashed,
-            "USER_MAILE_ADRESS": req.email,
-            "EXPIRATION_DATE": None,
-            "VALID_FLAG": True,
-            "CREATE_DATE": now_iso,
-            "UPDATE_DATE": now_iso,
+            "user_name": req.name,
+            "user_pass": hashed,
+            "user_maile_adress": req.email,
+            "expiration_date": None,
+            "valid_flag": True,
+            "create_date": now_iso,
+            "update_date": now_iso,
         }).execute()
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"登録に失敗しました: {str(e)}")
