@@ -1,11 +1,10 @@
-FROM python:3.12-slim
+FROM python:3.12
 
 WORKDIR /app
 
 # ctranslate2 / faster-whisper が必要とするシステムライブラリ
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libgomp1 \
-    libstdc++6 \
     && rm -rf /var/lib/apt/lists/*
 
 COPY server/requirements.txt server/requirements.txt
