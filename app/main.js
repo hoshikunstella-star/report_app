@@ -20,7 +20,7 @@ require("dotenv").config({ path: envFile });
 let mainWindow;
 
 // サーバーモード設定
-const API_BASE_URL = process.env.API_BASE_URL || "";
+const API_BASE_URL = (process.env.API_BASE_URL || "").replace(/\/+$/, "");
 let authToken = null;
 
 // プロジェクトフォルダの取得
@@ -324,8 +324,10 @@ ipcMain.handle("transcribe-audio", async (_event, { audioPath, options = {} }) =
       body: form
     });
     if (!res.ok) {
-      const err = await res.json().catch(() => ({ detail: res.statusText }));
-      throw new Error(err.detail || "文字起こしに失敗しました。");
+      const body = await res.text().catch(() => "");
+      let detail = res.statusText || "";
+      try { detail = JSON.parse(body).detail || detail; } catch {}
+      throw new Error(`文字起こしに失敗しました。(HTTP ${res.status}: ${detail || body.slice(0, 200)})`);
     }
     const data = await res.json();
     appendLog("info", "transcribe-audio: server mode success");
