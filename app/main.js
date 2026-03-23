@@ -23,6 +23,33 @@ let mainWindow;
 const API_BASE_URL = (process.env.API_BASE_URL || "").replace(/\/+$/, "");
 let authToken = null;
 
+// セッションファイルのパス（アプリ起動後に初期化）
+function getSessionFilePath() {
+  return path.join(app.getPath("userData"), "session.json");
+}
+
+// セッションの読み込み（起動時）
+function loadSession() {
+  try {
+    const data = JSON.parse(fs.readFileSync(getSessionFilePath(), "utf-8"));
+    if (!data.token || !data.expiresAt) return null;
+    if (new Date(data.expiresAt) <= new Date()) return null; // 期限切れ
+    return data;
+  } catch {
+    return null;
+  }
+}
+
+// セッションの保存
+function saveSession(token, email, expiresAt) {
+  fs.writeFileSync(getSessionFilePath(), JSON.stringify({ token, email, expiresAt }), "utf-8");
+}
+
+// セッションの削除
+function clearSession() {
+  try { fs.unlinkSync(getSessionFilePath()); } catch {}
+}
+
 // プロジェクトフォルダの取得
 function getProjectRoot() {
   // app フォルダの一つ上をプロジェクトルートとみなす
@@ -153,12 +180,18 @@ function assignSpeakerToSegment(diarizationSegments, t) {
   return best;
 }
 
-// サーバーモード情報の取得
-ipcMain.handle("get-api-mode", () => {
-  return { mode: API_BASE_URL ? "server" : "local", hasToken: !!authToken };
+// 有料プランステータスの取得
+ipcMain.handle("get-paid-status", () => {
+  const saved = loadSession();
+  if (saved) {
+    authToken = saved.token; // 念のため同期
+    return { isPaid: true, email: saved.email, expiresAt: saved.expiresAt };
+  }
+  authToken = null;
+  return { isPaid: false, email: null, expiresAt: null };
 });
 
-// ログイン（サーバーモード）
+// ログイン（有料プラン切り替え）
 ipcMain.handle("auth-login", async (_event, { email, password }) => {
   if (!API_BASE_URL) throw new Error("API_BASE_URL が設定されていません。");
   const res = await fetch(`${API_BASE_URL}/auth/login`, {
@@ -167,13 +200,41 @@ ipcMain.handle("auth-login", async (_event, { email, password }) => {
     body: JSON.stringify({ email, password })
   });
   if (!res.ok) {
-    const err = await res.json().catch(() => ({ detail: res.statusText }));
-    throw new Error(err.detail || "ログインに失敗しました。");
+    const body = await res.text().catch(() => "");
+    let detail = res.statusText || "";
+    try { detail = JSON.parse(body).detail || detail; } catch {}
+    throw new Error(detail || "ログインに失敗しました。");
   }
   const data = await res.json();
   authToken = data.access_token;
+  saveSession(data.access_token, data.email, data.expiration_date);
   appendLog("info", `auth-login: user=${data.email}`);
-  return { email: data.email, user_id: data.user_id };
+  return { email: data.email, user_id: data.user_id, expiresAt: data.expiration_date };
+});
+
+// ユーザー登録
+ipcMain.handle("auth-register", async (_event, { name, email, password }) => {
+  if (!API_BASE_URL) throw new Error("API_BASE_URL が設定されていません。");
+  const res = await fetch(`${API_BASE_URL}/auth/register`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name, email, password })
+  });
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    let detail = res.statusText || "";
+    try { detail = JSON.parse(body).detail || detail; } catch {}
+    throw new Error(detail || "登録に失敗しました。");
+  }
+  return await res.json();
+});
+
+// ログアウト
+ipcMain.handle("auth-logout", () => {
+  authToken = null;
+  clearSession();
+  appendLog("info", "auth-logout");
+  return {};
 });
 
 // アプリ内録音データの保存
@@ -277,6 +338,12 @@ ipcMain.handle("read-history-file", async (_event, { filePath }) => {
 
 // アプリの準備完了時の処理
 app.whenReady().then(() => {
+  // 保存済みセッションを復元
+  const saved = loadSession();
+  if (saved) {
+    authToken = saved.token;
+    appendLog("info", `session restored: email=${saved.email}`);
+  }
   createWindow();
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();

@@ -28,7 +28,9 @@ contextBridge.exposeInMainWorld("gijiroku", {
   // AI 要約
   summarizeText: (text) => ipcRenderer.invoke("summarize-text", { text }),
 
-  // サーバーモード・認証
-  getApiMode: () => ipcRenderer.invoke("get-api-mode"),
-  login: (email, password) => ipcRenderer.invoke("auth-login", { email, password })
+  // 認証・プラン管理
+  getPaidStatus: () => ipcRenderer.invoke("get-paid-status"),
+  login: (email, password) => ipcRenderer.invoke("auth-login", { email, password }),
+  register: (name, email, password) => ipcRenderer.invoke("auth-register", { name, email, password }),
+  logout: () => ipcRenderer.invoke("auth-logout")
 });

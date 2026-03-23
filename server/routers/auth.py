@@ -1,37 +1,109 @@
 # File: server/routers/auth.py
-# Description: 認証エンドポイント（Supabase Auth）
+# Description: 認証エンドポイント（カスタムusersテーブル）
 
+import os
+from datetime import datetime, timezone, timedelta
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
+from passlib.hash import bcrypt
+import jwt
 from ..db import supabase
 
 router = APIRouter()
 
+JWT_SECRET = os.environ.get("JWT_SECRET", "change-me-in-production")
+JWT_ALGORITHM = "HS256"
+JWT_EXPIRE_DAYS = 30
 
-class AuthRequest(BaseModel):
+
+class LoginRequest(BaseModel):
+    email: str
+    password: str
+
+
+class RegisterRequest(BaseModel):
+    name: str
     email: str
     password: str
 
 
 @router.post("/login")
-async def login(req: AuthRequest):
+async def login(req: LoginRequest):
+    # usersテーブルからメールアドレスで検索
     try:
-        res = supabase.auth.sign_in_with_password(
-            {"email": req.email, "password": req.password}
-        )
-        return {
-            "access_token": res.session.access_token,
-            "user_id": str(res.user.id),
-            "email": res.user.email,
-        }
+        res = supabase.table("users").select("*").eq("USER_MAILE_ADRESS", req.email).execute()
     except Exception as e:
-        raise HTTPException(status_code=401, detail=f"ログイン失敗: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"DB エラー: {str(e)}")
+
+    rows = res.data or []
+    if not rows:
+        raise HTTPException(status_code=401, detail="メールアドレスまたはパスワードが正しくありません。")
+
+    user = rows[0]
+
+    if not user.get("VALID_FLAG", False):
+        raise HTTPException(status_code=403, detail="このアカウントは無効です。")
+
+    if not bcrypt.verify(req.password, user["USER_PASS"]):
+        raise HTTPException(status_code=401, detail="メールアドレスまたはパスワードが正しくありません。")
+
+    # 有料プラン確認
+    exp_raw = user.get("EXPIRATION_DATE")
+    if not exp_raw:
+        raise HTTPException(status_code=403, detail="有料プランではありません。")
+
+    # タイムゾーン付きで比較
+    if isinstance(exp_raw, str):
+        expiration = datetime.fromisoformat(exp_raw.replace("Z", "+00:00"))
+    else:
+        expiration = exp_raw
+
+    now = datetime.now(timezone.utc)
+    if expiration <= now:
+        raise HTTPException(status_code=403, detail="有料プランの有効期限が切れています。")
+
+    # JWT 生成（30日有効）
+    token_exp = now + timedelta(days=JWT_EXPIRE_DAYS)
+    payload = {
+        "sub": str(user["USER_ID"]),
+        "email": user["USER_MAILE_ADRESS"],
+        "exp": token_exp,
+    }
+    token = jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
+
+    return {
+        "access_token": token,
+        "user_id": str(user["USER_ID"]),
+        "email": user["USER_MAILE_ADRESS"],
+        "expiration_date": expiration.isoformat(),
+    }
 
 
-@router.post("/signup")
-async def signup(req: AuthRequest):
+@router.post("/register")
+async def register(req: RegisterRequest):
+    # メールアドレス重複チェック
     try:
-        supabase.auth.sign_up({"email": req.email, "password": req.password})
-        return {"message": "登録完了。メールを確認してアカウントを有効化してください。"}
+        res = supabase.table("users").select("USER_ID").eq("USER_MAILE_ADRESS", req.email).execute()
     except Exception as e:
-        raise HTTPException(status_code=400, detail=f"登録失敗: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"DB エラー: {str(e)}")
+
+    if res.data:
+        raise HTTPException(status_code=409, detail="このメールアドレスは既に登録されています。")
+
+    hashed = bcrypt.hash(req.password)
+    now_iso = datetime.now(timezone.utc).isoformat()
+
+    try:
+        supabase.table("users").insert({
+            "USER_NAME": req.name,
+            "USER_PASS": hashed,
+            "USER_MAILE_ADRESS": req.email,
+            "EXPIRATION_DATE": None,
+            "VALID_FLAG": True,
+            "CREATE_DATE": now_iso,
+            "UPDATE_DATE": now_iso,
+        }).execute()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"登録に失敗しました: {str(e)}")
+
+    return {"message": "登録が完了しました。"}

@@ -53,6 +53,23 @@ body {
   gap: 12px;
 }
 
+.header-plan {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.plan-label {
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.btn-plan {
+  font-size: 12px;
+  padding: 4px 10px;
+}
+
 .header-lang {
   display: flex;
   align-items: center;

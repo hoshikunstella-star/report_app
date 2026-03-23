@@ -38,15 +38,32 @@ const btnReplaceOne = document.getElementById("btnReplaceOne");
 const btnReplaceAll = document.getElementById("btnReplaceAll");
 const btnCloseReplace = document.getElementById("btnCloseReplace");
 
+// プランUI
+const planLabel = document.getElementById("planLabel");
+const btnSwitchPlan = document.getElementById("btnSwitchPlan");
+
 // ログインモーダル
 const loginModal = document.getElementById("loginModal");
 const loginEmail = document.getElementById("loginEmail");
 const loginPassword = document.getElementById("loginPassword");
 const btnLogin = document.getElementById("btnLogin");
+const btnCloseLogin = document.getElementById("btnCloseLogin");
 const loginError = document.getElementById("loginError");
+const linkToRegister = document.getElementById("linkToRegister");
+
+// 登録モーダル
+const registerModal = document.getElementById("registerModal");
+const regName = document.getElementById("regName");
+const regEmail = document.getElementById("regEmail");
+const regPassword = document.getElementById("regPassword");
+const regPasswordConfirm = document.getElementById("regPasswordConfirm");
+const btnRegister = document.getElementById("btnRegister");
+const btnBackToLogin = document.getElementById("btnBackToLogin");
+const registerError = document.getElementById("registerError");
 
 // 変数の宣言
 let selectedAudioPath = null;
+let isPaidPlan = false;
 let mediaRecorder = null;
 let recordedChunks = [];
 let currentLang = "ja";
@@ -610,8 +627,24 @@ btnSummaryCopy.addEventListener("click", () => {
 elText.addEventListener("input", () => {
   const hasText = elText.value.trim().length > 0;
   btnExport.disabled = !hasText;
-  btnSummarize.disabled = !hasText;
+  btnSummarize.disabled = !hasText || !isPaidPlan;
 });
+
+// ======= プラン UI 更新 =======
+function applyPaidUI(email, expiresAt) {
+  isPaidPlan = true;
+  const dateStr = expiresAt ? new Date(expiresAt).toLocaleDateString("ja-JP") : "";
+  planLabel.textContent = `有料プラン（${email}　期限: ${dateStr}）`;
+  btnSwitchPlan.textContent = "ログアウト";
+  btnSummarize.disabled = elText.value.trim().length === 0;
+}
+
+function applyFreeUI() {
+  isPaidPlan = false;
+  planLabel.textContent = "無料プラン";
+  btnSwitchPlan.textContent = "有料プランに切り替え";
+  btnSummarize.disabled = true;
+}
 
 // ======= ログイン =======
 async function handleLogin() {
@@ -627,6 +660,7 @@ async function handleLogin() {
   try {
     const user = await window.gijiroku.login(email, password);
     loginModal.hidden = true;
+    applyPaidUI(user.email, user.expiresAt);
     uiLogSuccess(`ログイン成功（${user.email}）`);
   } catch (e) {
     loginError.textContent = e?.message || "ログインに失敗しました。";
@@ -641,16 +675,87 @@ loginPassword.addEventListener("keydown", (e) => {
   if (e.key === "Enter") handleLogin();
 });
 
-// アプリ起動時のサーバーモード確認
-(async () => {
-  applyI18n();
-  const { mode } = await window.gijiroku.getApiMode();
-  if (mode === "server") {
+btnCloseLogin.addEventListener("click", () => {
+  loginModal.hidden = true;
+});
+
+// ログインモーダル → 登録モーダルへ
+linkToRegister.addEventListener("click", (e) => {
+  e.preventDefault();
+  loginModal.hidden = true;
+  registerModal.hidden = false;
+  regName.focus();
+});
+
+// 登録モーダル → ログインモーダルへ戻る
+btnBackToLogin.addEventListener("click", () => {
+  registerModal.hidden = true;
+  loginModal.hidden = false;
+  loginEmail.focus();
+});
+
+// ======= ユーザー登録 =======
+async function handleRegister() {
+  const name = regName.value.trim();
+  const email = regEmail.value.trim();
+  const password = regPassword.value;
+  const confirm = regPasswordConfirm.value;
+
+  if (!name || !email || !password || !confirm) {
+    registerError.textContent = "すべての項目を入力してください。";
+    return;
+  }
+  if (password !== confirm) {
+    registerError.textContent = "パスワードが一致しません。";
+    return;
+  }
+
+  btnRegister.disabled = true;
+  btnRegister.textContent = "登録中…";
+  registerError.textContent = "";
+  try {
+    await window.gijiroku.register(name, email, password);
+    registerModal.hidden = true;
+    loginModal.hidden = false;
+    loginEmail.value = email;
+    loginPassword.value = "";
+    loginError.textContent = "";
+    loginEmail.focus();
+    uiLogSuccess("登録完了。ログインしてください。");
+  } catch (e) {
+    registerError.textContent = e?.message || "登録に失敗しました。";
+  } finally {
+    btnRegister.disabled = false;
+    btnRegister.textContent = "登録";
+  }
+}
+
+btnRegister.addEventListener("click", handleRegister);
+regPasswordConfirm.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") handleRegister();
+});
+
+// ======= 有料プラン切り替えボタン =======
+btnSwitchPlan.addEventListener("click", async () => {
+  if (btnSwitchPlan.textContent === "ログアウト") {
+    await window.gijiroku.logout();
+    applyFreeUI();
+    uiLogSuccess("ログアウトしました。");
+  } else {
     loginModal.hidden = false;
     loginEmail.focus();
-    uiLogSuccess("サーバーモードで起動しました。ログインしてください。");
+  }
+});
+
+// アプリ起動時：有料プランステータス確認
+(async () => {
+  applyI18n();
+  const status = await window.gijiroku.getPaidStatus();
+  if (status.isPaid) {
+    applyPaidUI(status.email, status.expiresAt);
+    uiLogSuccess(`有料プランで起動しました（${status.email}）`);
   } else {
-    loginModal.hidden = true;
+    applyFreeUI();
     uiLogSuccess("準備OK。音声/動画ファイルを選択するか、録音を開始してください。");
   }
 })();

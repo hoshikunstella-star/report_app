@@ -11,6 +11,10 @@
       <div class="header-main">
         <div class="title" data-i18n-key="title">議事録作成補助ツール</div>
       </div>
+      <div class="header-plan">
+        <span id="planLabel" class="plan-label">無料プラン</span>
+        <button id="btnSwitchPlan" class="btn btn-plan">有料プランに切り替え</button>
+      </div>
       <div class="header-lang">
         <span>言語選択：</span>
         <select id="uiLangSelect">
@@ -110,16 +114,37 @@
 
     </main>
 
-    <!-- ログインモーダル -->
-    <div id="loginModal" class="modal">
+    <!-- ログインモーダル（有料プラン切り替え） -->
+    <div id="loginModal" class="modal" hidden>
       <div class="modal-box">
-        <div class="modal-title">ログイン</div>
+        <div class="modal-title">有料プランに切り替え</div>
         <input id="loginEmail" class="modal-input" type="email" placeholder="メールアドレス" autocomplete="email" />
         <input id="loginPassword" class="modal-input" type="password" placeholder="パスワード" autocomplete="current-password" />
         <div class="modal-actions">
           <button id="btnLogin" class="btn primary">ログイン</button>
+          <button id="btnCloseLogin" class="btn">キャンセル</button>
         </div>
         <div id="loginError" class="muted" style="font-size:12px;min-height:18px;"></div>
+        <div style="margin-top:10px;font-size:12px;">
+          アカウントをお持ちでない方は
+          <a id="linkToRegister" href="#" style="color:#4c9be8;">こちらで登録</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- 登録モーダル -->
+    <div id="registerModal" class="modal" hidden>
+      <div class="modal-box">
+        <div class="modal-title">アカウント登録</div>
+        <input id="regName" class="modal-input" type="text" placeholder="お名前" autocomplete="name" />
+        <input id="regEmail" class="modal-input" type="email" placeholder="メールアドレス" autocomplete="email" />
+        <input id="regPassword" class="modal-input" type="password" placeholder="パスワード" autocomplete="new-password" />
+        <input id="regPasswordConfirm" class="modal-input" type="password" placeholder="パスワード（確認用）" autocomplete="new-password" />
+        <div class="modal-actions">
+          <button id="btnRegister" class="btn primary">登録</button>
+          <button id="btnBackToLogin" class="btn">戻る</button>
+        </div>
+        <div id="registerError" class="muted" style="font-size:12px;min-height:18px;"></div>
       </div>
     </div>
 
