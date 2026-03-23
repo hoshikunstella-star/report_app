@@ -12,4 +12,4 @@ RUN pip install --no-cache-dir -r server/requirements.txt
 
 COPY . .
 
-CMD ["python3", "-c", "import os,uvicorn; uvicorn.run('server.main:app', host='0.0.0.0', port=int(os.environ.get('PORT',8000)))"]
+CMD ["sh", "-c", "python3 -m uvicorn server.main:app --host 0.0.0.0 --port $PORT"]
