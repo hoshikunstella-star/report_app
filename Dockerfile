@@ -12,4 +12,4 @@ RUN pip install --no-cache-dir -r server/requirements.txt
 
 COPY . .
 
-CMD ["sh", "-c", "python3 -m uvicorn server.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
+CMD python3 -m uvicorn server.main:app --host 0.0.0.0 --port $PORT
