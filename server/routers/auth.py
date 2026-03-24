@@ -31,7 +31,7 @@ class RegisterRequest(BaseModel):
 async def login(req: LoginRequest):
     # usersテーブルからメールアドレスで検索
     try:
-        res = supabase.table("users").select("*").eq("user_maile_adress", req.email).execute()
+        res = supabase.table("USER").select("*").eq("user_maile_adress", req.email).execute()
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"DB エラー: {str(e)}")
 
@@ -83,7 +83,7 @@ async def login(req: LoginRequest):
 async def register(req: RegisterRequest):
     # メールアドレス重複チェック
     try:
-        res = supabase.table("users").select("user_id").eq("user_maile_adress", req.email).execute()
+        res = supabase.table("USER").select("user_id").eq("user_maile_adress", req.email).execute()
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"DB エラー: {str(e)}")
 
@@ -94,7 +94,7 @@ async def register(req: RegisterRequest):
     now_iso = datetime.now(timezone.utc).isoformat()
 
     try:
-        supabase.table("users").insert({
+        supabase.table("USER").insert({
             "user_name": req.name,
             "user_pass": hashed,
             "user_maile_adress": req.email,
