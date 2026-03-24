@@ -24,10 +24,17 @@ def _to_wav(audio_path: Path) -> tuple[Path, bool]:
     tmp = tempfile.NamedTemporaryFile(suffix=".wav", delete=False)
     tmp.close()
     tmp_path = Path(tmp.name)
-    result = subprocess.run(
-        ["ffmpeg", "-y", "-i", str(audio_path), "-ar", "16000", "-ac", "1", str(tmp_path)],
-        capture_output=True,
-    )
+    try:
+        result = subprocess.run(
+            ["ffmpeg", "-y", "-i", str(audio_path), "-ar", "16000", "-ac", "1", str(tmp_path)],
+            capture_output=True,
+        )
+    except FileNotFoundError:
+        tmp_path.unlink(missing_ok=True)
+        raise RuntimeError(
+            "ffmpeg が見つかりません。インストールしてください。\n"
+            "インストール方法: PowerShell（管理者）で `winget install ffmpeg` を実行後、再起動してください。"
+        )
     if result.returncode != 0:
         tmp_path.unlink(missing_ok=True)
         raise RuntimeError(f"ffmpeg 変換失敗: {result.stderr.decode(errors='replace')}")
