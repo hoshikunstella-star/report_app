@@ -39,7 +39,6 @@ def main() -> int:
 
     segments, info = model.transcribe(  # モデルを実行
         str(audio_path),
-        language="ja",  # 言語
         vad_filter=True,
         vad_parameters=dict(min_silence_duration_ms=500),  # 最小無音時間
         beam_size=5,  # ビームサイズ
