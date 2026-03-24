@@ -23,7 +23,11 @@ async def summarize_text(req: SummarizeRequest, user=Depends(get_current_user)):
     client = anthropic.Anthropic(api_key=api_key)
 
     import re
-    has_speakers = bool(re.search(r"^発言者[A-Z]:", req.text, re.MULTILINE))
+    has_speakers = bool(re.search(r"^Speaker_[A-Z]:", req.text, re.MULTILINE))
+    # ラベルを除いた本文から言語を判定
+    content_only = re.sub(r"^Speaker_[A-Z]:\s*", "", req.text, flags=re.MULTILINE)
+    has_japanese = bool(re.search(r"[\u3040-\u309f\u30a0-\u30ff\u4e00-\u9fff]", content_only))
+    response_lang = "日本語" if has_japanese else "English"
     task_prompt = (
         "以下は話者ごとに分かれた会議の発言記録です。各話者の主要な発言・議論のポイントを整理し、会議全体を簡潔に要約してください。"
         if has_speakers else
@@ -31,7 +35,7 @@ async def summarize_text(req: SummarizeRequest, user=Depends(get_current_user)):
     )
     system_prompt = (
         "あなたは議事録の要約を担当するアシスタントです。" + task_prompt +
-        "【重要】回答は必ず文字起こしテキストと同じ言語で行ってください。翻訳はしないでください。"
+        f"【重要】必ず{response_lang}で回答してください。翻訳はしないでください。"
     )
 
     try:

@@ -151,11 +151,11 @@ function runProcess(exe, args, extraEnv = {}) {
 
 // 発言者ラベルの正規化
 function normalizeSpeakerLabel(raw) {
-  if (!raw) return "発言者A";
+  if (!raw) return "Speaker_A";
   const m = String(raw).match(/(\d+)/);
   const idx = m ? Number(m[1]) : 0;
   const letter = String.fromCharCode("A".charCodeAt(0) + (idx % 26));
-  return `発言者${letter}`;
+  return `Speaker_${letter}`;
 }
 
 // 発言者ラベルの割り当て
@@ -589,11 +589,15 @@ ipcMain.handle("summarize-text", async (_event, { text }) => {
   const Anthropic = require("@anthropic-ai/sdk");
   const client = new Anthropic.default({ apiKey });
 
-  const hasSpeakers = /^発言者[A-Z]:/m.test(text);
+  const hasSpeakers = /^Speaker_[A-Z]:/m.test(text);
+  // ラベルを除いた本文から言語を判定
+  const contentOnly = text.replace(/^Speaker_[A-Z]:\s*/gm, "");
+  const hasJapanese = /[\u3040-\u309f\u30a0-\u30ff\u4e00-\u9fff]/.test(contentOnly);
+  const responseLang = hasJapanese ? "日本語" : "English";
   const taskPrompt = hasSpeakers
     ? "以下は話者ごとに分かれた会議の発言記録です。各話者の主要な発言・議論のポイントを整理し、会議全体を簡潔に要約してください。"
     : "以下は会議の文字起こしテキストです。主要な議題・決定事項・次のアクションを箇条書きで簡潔に要約してください。";
-  const systemPrompt = "あなたは議事録の要約を担当するアシスタントです。" + taskPrompt + "【重要】回答は必ず文字起こしテキストと同じ言語で行ってください。翻訳はしないでください。";
+  const systemPrompt = "あなたは議事録の要約を担当するアシスタントです。" + taskPrompt + `【重要】必ず${responseLang}で回答してください。翻訳はしないでください。`;
 
   const response = await client.messages.create({
     model: "claude-haiku-4-5-20251001",
