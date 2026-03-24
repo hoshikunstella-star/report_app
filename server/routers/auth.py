@@ -5,7 +5,7 @@ import os
 from datetime import datetime, timezone, timedelta
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
-from passlib.hash import bcrypt
+import bcrypt as _bcrypt
 import jwt
 from ..db import supabase
 
@@ -44,7 +44,7 @@ async def login(req: LoginRequest):
     if not user.get("valid_flag", False):
         raise HTTPException(status_code=403, detail="このアカウントは無効です。")
 
-    if not bcrypt.verify(req.password, user["user_pass"]):
+    if not _bcrypt.checkpw(req.password.encode(), user["user_pass"].encode()):
         raise HTTPException(status_code=401, detail="メールアドレスまたはパスワードが正しくありません。")
 
     # 有料プラン確認
@@ -89,7 +89,7 @@ async def register(req: RegisterRequest):
         if res.data:
             raise HTTPException(status_code=409, detail="このメールアドレスは既に登録されています。")
 
-        hashed = bcrypt.hash(req.password)
+        hashed = _bcrypt.hashpw(req.password.encode(), _bcrypt.gensalt()).decode()
         now_iso = datetime.now(timezone.utc).isoformat()
 
         supabase.table("APP_USER").insert({
