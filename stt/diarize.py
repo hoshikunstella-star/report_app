@@ -5,12 +5,33 @@
 
 import json
 import os
+import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 # エラーログの表示
 def eprint(*args):
     print(*args, file=sys.stderr, flush=True)
+
+# soundfile が直接読めない拡張子
+_SOUNDFILE_UNSUPPORTED = {".mp4", ".mov", ".avi", ".mkv", ".webm", ".m4a", ".aac", ".wma", ".mp3"}
+
+def _to_wav(audio_path: Path) -> tuple[Path, bool]:
+    """MP4等の場合はffmpegで一時WAVに変換して返す。WAV等はそのまま返す。"""
+    if audio_path.suffix.lower() not in _SOUNDFILE_UNSUPPORTED:
+        return audio_path, False
+    tmp = tempfile.NamedTemporaryFile(suffix=".wav", delete=False)
+    tmp.close()
+    tmp_path = Path(tmp.name)
+    result = subprocess.run(
+        ["ffmpeg", "-y", "-i", str(audio_path), "-ar", "16000", "-ac", "1", str(tmp_path)],
+        capture_output=True,
+    )
+    if result.returncode != 0:
+        tmp_path.unlink(missing_ok=True)
+        raise RuntimeError(f"ffmpeg 変換失敗: {result.stderr.decode(errors='replace')}")
+    return tmp_path, True
 
 # 音声ファイルの読み込み
 def load_audio_in_memory(audio_path: Path):
@@ -22,7 +43,13 @@ def load_audio_in_memory(audio_path: Path):
     import soundfile as sf
     import torch
 
-    data, sr = sf.read(str(audio_path), always_2d=True)
+    wav_path, is_tmp = _to_wav(audio_path)
+    try:
+        data, sr = sf.read(str(wav_path), always_2d=True)
+    finally:
+        if is_tmp:
+            wav_path.unlink(missing_ok=True)
+
     # data: (time, channels) 時間とチャンネル
     if data.shape[1] > 1:
         data = np.mean(data, axis=1, keepdims=True)
