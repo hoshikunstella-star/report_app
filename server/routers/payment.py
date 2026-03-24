@@ -26,30 +26,35 @@ async def create_checkout_session(req: CheckoutRequest):
     if not STRIPE_SECRET_KEY or not STRIPE_PRICE_ID:
         raise HTTPException(status_code=500, detail="Stripe設定が未完了です（STRIPE_SECRET_KEY / STRIPE_PRICE_ID）。")
 
-    stripe.api_key = STRIPE_SECRET_KEY
-
-    # ユーザー存在確認
+    import traceback
     try:
+        stripe.api_key = STRIPE_SECRET_KEY
+
+        # ユーザー存在確認
         res = supabase.table("APP_USER").select("user_id").eq("user_maile_adress", req.email).execute()
+
+        if not res.data:
+            raise HTTPException(status_code=404, detail="このメールアドレスは登録されていません。先にアカウント登録してください。")
+
+        user_id = str(res.data[0]["user_id"])
+
+        base = PUBLIC_URL or "https://web-production-47d3e.up.railway.app"
+        session = stripe.checkout.Session.create(
+            payment_method_types=["card"],
+            line_items=[{"price": STRIPE_PRICE_ID, "quantity": 1}],
+            mode="subscription",
+            success_url=f"{base}/payment/success",
+            cancel_url=f"{base}/payment/cancel",
+            client_reference_id=user_id,
+            customer_email=req.email,
+        )
+        return {"url": session.url}
+
+    except HTTPException:
+        raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"DB エラー: {str(e)}")
-
-    if not res.data:
-        raise HTTPException(status_code=404, detail="このメールアドレスは登録されていません。先にアカウント登録してください。")
-
-    user_id = str(res.data[0]["user_id"])
-
-    base = PUBLIC_URL or "https://web-production-47d3e.up.railway.app"
-    session = stripe.checkout.Session.create(
-        payment_method_types=["card"],
-        line_items=[{"price": STRIPE_PRICE_ID, "quantity": 1}],
-        mode="subscription",
-        success_url=f"{base}/payment/success",
-        cancel_url=f"{base}/payment/cancel",
-        client_reference_id=user_id,
-        customer_email=req.email,
-    )
-    return {"url": session.url}
+        detail = f"{type(e).__name__}: {str(e)}\n{traceback.format_exc()}"
+        raise HTTPException(status_code=500, detail=detail)
 
 
 @router.get("/success")
