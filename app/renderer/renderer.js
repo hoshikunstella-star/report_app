@@ -648,6 +648,9 @@ function applyPaidUI(email, expiresAt, userId) {
   tabSummary.title = "";
   btnSummarize.disabled = elText.value.trim().length === 0;
   btnSummaryCopy.disabled = summaryText.value.trim().length === 0;
+  chkDiarize.disabled = false;
+  chkDiarize.parentElement.title = "";
+  chkDiarize.parentElement.style.opacity = "";
 }
 
 function applyFreeUI() {
@@ -659,6 +662,10 @@ function applyFreeUI() {
   tabSummary.title = "有料プランが必要です";
   btnSummarize.disabled = true;
   btnSummaryCopy.disabled = true;
+  chkDiarize.disabled = true;
+  chkDiarize.checked = false;
+  chkDiarize.parentElement.title = "有料プランが必要です";
+  chkDiarize.parentElement.style.opacity = "0.4";
   if (!panelSummary.hidden) updateTabs("transcribe");
 }
 
