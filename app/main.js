@@ -229,6 +229,25 @@ ipcMain.handle("auth-register", async (_event, { name, email, password }) => {
   return await res.json();
 });
 
+// Stripe チェックアウトセッション作成（登録後に決済へ）
+ipcMain.handle("create-checkout-session", async (_event, { email }) => {
+  if (!API_BASE_URL) throw new Error("API_BASE_URL が設定されていません。");
+  const res = await fetch(`${API_BASE_URL}/payment/create-checkout-session`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email })
+  });
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    let detail = res.statusText || "";
+    try { detail = JSON.parse(body).detail || detail; } catch {}
+    throw new Error(detail || "決済セッションの作成に失敗しました。");
+  }
+  const data = await res.json();
+  shell.openExternal(data.url);
+  return {};
+});
+
 // ログアウト
 ipcMain.handle("auth-logout", () => {
   authToken = null;

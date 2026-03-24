@@ -3,7 +3,7 @@
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from .routers import auth, transcribe, summarize, history
+from .routers import auth, transcribe, summarize, history, payment
 
 app = FastAPI(
     title="議事録作成補助ツール API",
@@ -23,6 +23,7 @@ app.include_router(auth.router, prefix="/auth", tags=["認証"])
 app.include_router(transcribe.router, prefix="/transcribe", tags=["文字起こし"])
 app.include_router(summarize.router, prefix="/summarize", tags=["AI要約"])
 app.include_router(history.router, prefix="/history", tags=["履歴"])
+app.include_router(payment.router, prefix="/payment", tags=["決済"])
 
 
 @app.get("/")

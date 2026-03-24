@@ -726,18 +726,20 @@ async function handleRegister() {
   registerError.textContent = "";
   try {
     await window.gijiroku.register(name, email, password);
+    btnRegister.textContent = "決済ページを開いています…";
+    await window.gijiroku.createCheckoutSession(email);
     registerModal.hidden = true;
     loginModal.hidden = false;
     loginEmail.value = email;
     loginPassword.value = "";
     loginError.textContent = "";
     loginEmail.focus();
-    uiLogSuccess("登録完了。ログインしてください。");
+    uiLogSuccess("登録完了。ブラウザで決済を完了後、ログインしてください。");
   } catch (e) {
     registerError.textContent = e?.message || "登録に失敗しました。";
   } finally {
     btnRegister.disabled = false;
-    btnRegister.textContent = "登録";
+    btnRegister.textContent = "登録して決済へ";
   }
 }
 
