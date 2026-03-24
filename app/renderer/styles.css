@@ -277,6 +277,12 @@ body {
   color: var(--text);
   padding: 2px 4px;
   font-size: 13px;
+  outline: none;
+}
+
+.historyItem-name input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(76, 155, 232, 0.25);
 }
 
 .historyItem-actions {
@@ -327,7 +333,8 @@ body {
 }
 
 .textarea:focus {
-  border-color: rgba(110, 168, 255, 0.3);
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(76, 155, 232, 0.25);
 }
 
 .btn {
@@ -506,6 +513,7 @@ body {
 
 .modal-input:focus {
   border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(76, 155, 232, 0.25);
 }
 
 .modal-actions {
