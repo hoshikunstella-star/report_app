@@ -81,19 +81,17 @@ async def login(req: LoginRequest):
 
 @router.post("/register")
 async def register(req: RegisterRequest):
-    # メールアドレス重複チェック
+    import traceback
     try:
+        # メールアドレス重複チェック
         res = supabase.table("APP_USER").select("user_id").eq("user_maile_adress", req.email).execute()
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"DB エラー: {str(e)}")
 
-    if res.data:
-        raise HTTPException(status_code=409, detail="このメールアドレスは既に登録されています。")
+        if res.data:
+            raise HTTPException(status_code=409, detail="このメールアドレスは既に登録されています。")
 
-    hashed = bcrypt.hash(req.password)
-    now_iso = datetime.now(timezone.utc).isoformat()
+        hashed = bcrypt.hash(req.password)
+        now_iso = datetime.now(timezone.utc).isoformat()
 
-    try:
         supabase.table("APP_USER").insert({
             "user_name": req.name,
             "user_pass": hashed,
@@ -103,7 +101,11 @@ async def register(req: RegisterRequest):
             "create_date": now_iso,
             "update_date": now_iso,
         }).execute()
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"登録に失敗しました: {str(e)}")
 
-    return {"message": "登録が完了しました。"}
+        return {"message": "登録が完了しました。"}
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        detail = f"{type(e).__name__}: {str(e)}\n{traceback.format_exc()}"
+        raise HTTPException(status_code=500, detail=detail)
