@@ -210,7 +210,7 @@ ipcMain.handle("auth-login", async (_event, { email, password }) => {
   authToken = data.access_token;
   saveSession(data.access_token, data.email, data.expiration_date);
   appendLog("info", `auth-login: user=${data.email}`);
-  return { email: data.email, user_id: data.user_id, expiresAt: data.expiration_date };
+  return { email: data.email, user_id: data.user_id, expiresAt: data.expiration_date, status: data.status };
 });
 
 // ユーザー登録
