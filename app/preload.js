@@ -33,5 +33,6 @@ contextBridge.exposeInMainWorld("gijiroku", {
   login: (email, password) => ipcRenderer.invoke("auth-login", { email, password }),
   register: (name, email, password) => ipcRenderer.invoke("auth-register", { name, email, password }),
   logout: () => ipcRenderer.invoke("auth-logout"),
-  createCheckoutSession: (email) => ipcRenderer.invoke("create-checkout-session", { email })
+  createCheckoutSession: (email) => ipcRenderer.invoke("create-checkout-session", { email }),
+  cancelPlan: (userId) => ipcRenderer.invoke("auth-cancel", { userId })
 });

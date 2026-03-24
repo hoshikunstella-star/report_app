@@ -41,6 +41,7 @@ const btnCloseReplace = document.getElementById("btnCloseReplace");
 // プランUI
 const planLabel = document.getElementById("planLabel");
 const btnSwitchPlan = document.getElementById("btnSwitchPlan");
+const btnCancelPlan = document.getElementById("btnCancelPlan");
 
 // ログインモーダル
 const loginModal = document.getElementById("loginModal");
@@ -634,11 +635,15 @@ elText.addEventListener("input", () => {
 });
 
 // ======= プラン UI 更新 =======
-function applyPaidUI(email, expiresAt) {
+let _currentUserId = null;
+
+function applyPaidUI(email, expiresAt, userId) {
   isPaidPlan = true;
+  _currentUserId = userId || _currentUserId;
   const dateStr = expiresAt ? new Date(expiresAt).toLocaleDateString("ja-JP") : "";
   planLabel.textContent = `有料プラン（${email}　期限: ${dateStr}）`;
   btnSwitchPlan.textContent = "ログアウト";
+  btnCancelPlan.hidden = false;
   tabSummary.classList.remove("tab-disabled");
   tabSummary.title = "";
   btnSummarize.disabled = elText.value.trim().length === 0;
@@ -649,11 +654,11 @@ function applyFreeUI() {
   isPaidPlan = false;
   planLabel.textContent = "無料プラン";
   btnSwitchPlan.textContent = "有料プランに切り替え";
+  btnCancelPlan.hidden = true;
   tabSummary.classList.add("tab-disabled");
   tabSummary.title = "有料プランが必要です";
   btnSummarize.disabled = true;
   btnSummaryCopy.disabled = true;
-  // 要約タブが開いていた場合は文字起こしタブに戻す
   if (!panelSummary.hidden) updateTabs("transcribe");
 }
 
@@ -691,7 +696,7 @@ async function handleLogin() {
       alert("サブスクリプションが解約されています。\n有料プランに戻す場合は「決済を再開する」ボタンから再度決済してください。");
       uiLogSuccess("無料プランで起動しました（解約済み）。");
     } else {
-      applyPaidUI(user.email, user.expiresAt);
+      applyPaidUI(user.email, user.expiresAt, user.user_id);
       uiLogSuccess(`ログイン成功（${user.email}）`);
     }
   } catch (e) {
@@ -795,6 +800,26 @@ btnSwitchPlan.addEventListener("click", async () => {
   } else {
     loginModal.hidden = false;
     loginEmail.focus();
+  }
+});
+
+// ======= 解約ボタン =======
+btnCancelPlan.addEventListener("click", async () => {
+  if (!confirm("有料プランを解約しますか？\n解約後は無料プランに切り替わります。")) return;
+  if (!_currentUserId) {
+    alert("ユーザー情報が取得できません。再ログインしてください。");
+    return;
+  }
+  btnCancelPlan.disabled = true;
+  try {
+    await window.gijiroku.cancelPlan(_currentUserId);
+    applyFreeUI();
+    _currentUserId = null;
+    uiLogSuccess("解約しました。無料プランに切り替わりました。");
+  } catch (e) {
+    alert(e?.message || "解約に失敗しました。");
+  } finally {
+    btnCancelPlan.disabled = false;
   }
 });
 

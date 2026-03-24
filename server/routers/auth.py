@@ -129,3 +129,21 @@ async def register(req: RegisterRequest):
     except Exception as e:
         detail = f"{type(e).__name__}: {str(e)}\n{traceback.format_exc()}"
         raise HTTPException(status_code=500, detail=detail)
+
+
+class CancelRequest(BaseModel):
+    user_id: str
+
+
+@router.post("/cancel")
+async def cancel_plan(req: CancelRequest):
+    try:
+        now_iso = datetime.now(timezone.utc).isoformat()
+        supabase.table("APP_USER").update({
+            "status": "canceled",
+            "expiration_date": None,
+            "update_date": now_iso,
+        }).eq("user_id", req.user_id).execute()
+        return {"message": "解約しました。"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"解約に失敗しました: {str(e)}")

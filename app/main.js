@@ -249,6 +249,26 @@ ipcMain.handle("create-checkout-session", async (_event, { email }) => {
   return {};
 });
 
+// 解約
+ipcMain.handle("auth-cancel", async (_event, { userId }) => {
+  if (!API_BASE_URL) throw new Error("API_BASE_URL が設定されていません。");
+  const res = await fetch(`${API_BASE_URL}/auth/cancel`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ user_id: userId })
+  });
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    let detail = res.statusText || "";
+    try { detail = JSON.parse(body).detail || detail; } catch {}
+    throw new Error(detail || "解約に失敗しました。");
+  }
+  authToken = null;
+  clearSession();
+  appendLog("info", `auth-cancel: user_id=${userId}`);
+  return {};
+});
+
 // ログアウト
 ipcMain.handle("auth-logout", () => {
   authToken = null;
