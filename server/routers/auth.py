@@ -49,13 +49,15 @@ async def login(req: LoginRequest):
 
     status = user.get("status", "inactive")
 
-    # 決済途中
-    if status == "pending":
-        raise HTTPException(status_code=402, detail="決済が完了していません。", headers={"X-User-Status": "pending", "X-User-Email": req.email})
-
-    # 解約済み・未課金
-    if status in ("canceled", "inactive"):
-        raise HTTPException(status_code=403, detail="有料プランではありません。", headers={"X-User-Status": status})
+    # 決済途中・解約・未課金 → 認証OK、無料プランとして返す
+    if status in ("pending", "canceled", "inactive"):
+        return {
+            "access_token": None,
+            "user_id": str(user["user_id"]),
+            "email": user["user_maile_adress"],
+            "expiration_date": None,
+            "status": status,
+        }
 
     # active の場合、有効期限確認
     exp_raw = user.get("expiration_date")

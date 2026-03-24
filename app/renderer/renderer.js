@@ -676,18 +676,26 @@ async function handleLogin() {
   try {
     const user = await window.gijiroku.login(email, password);
     loginModal.hidden = true;
-    applyPaidUI(user.email, user.expiresAt);
-    uiLogSuccess(`ログイン成功（${user.email}）`);
-  } catch (e) {
-    const msg = e?.message || "ログインに失敗しました。";
-    if (msg.startsWith("PENDING:")) {
-      const parts = msg.split(":");
-      _pendingEmail = parts[1];
-      loginError.textContent = "決済が完了していません。下のボタンから決済を再開してください。";
+    btnRepayWrap.hidden = true;
+
+    if (user.status === "pending") {
+      _pendingEmail = user.email;
+      applyFreeUI();
       btnRepayWrap.hidden = false;
+      alert("決済が完了していません。\n有料プランに切り替える場合は「決済を再開する」ボタンから決済を完了させてください。\nそのまま無料プランでご利用いただけます。");
+      uiLogSuccess("無料プランで起動しました（決済未完了）。");
+    } else if (user.status === "canceled") {
+      _pendingEmail = user.email;
+      applyFreeUI();
+      btnRepayWrap.hidden = false;
+      alert("サブスクリプションが解約されています。\n有料プランに戻す場合は「決済を再開する」ボタンから再度決済してください。");
+      uiLogSuccess("無料プランで起動しました（解約済み）。");
     } else {
-      loginError.textContent = msg;
+      applyPaidUI(user.email, user.expiresAt);
+      uiLogSuccess(`ログイン成功（${user.email}）`);
     }
+  } catch (e) {
+    loginError.textContent = e?.message || "ログインに失敗しました。";
   } finally {
     btnLogin.disabled = false;
     btnLogin.textContent = "ログイン";

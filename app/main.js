@@ -204,8 +204,7 @@ ipcMain.handle("auth-login", async (_event, { email, password }) => {
     let detail = res.statusText || "";
     try { detail = JSON.parse(body).detail || detail; } catch {}
     // 402 = 決済未完了(pending) → メッセージにメールを埋め込んでrenderer側で再決済ボタンを表示
-    if (res.status === 402) throw new Error(`PENDING:${email}:${detail}`);
-    throw new Error(detail || "ログインに失敗しました。");
+      throw new Error(detail || "ログインに失敗しました。");
   }
   const data = await res.json();
   authToken = data.access_token;
