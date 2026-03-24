@@ -102,6 +102,7 @@ async def stripe_webhook(request: Request):
         user_id = session.get("client_reference_id")
         if user_id:
             supabase.table("APP_USER").update({
+                "status": "active",
                 "expiration_date": expiration,
                 "update_date": now_iso,
             }).eq("user_id", user_id).execute()
@@ -112,6 +113,7 @@ async def stripe_webhook(request: Request):
         customer_email = invoice.get("customer_email")
         if customer_email:
             supabase.table("APP_USER").update({
+                "status": "active",
                 "expiration_date": expiration,
                 "update_date": now_iso,
             }).eq("user_maile_adress", customer_email).execute()
@@ -125,6 +127,7 @@ async def stripe_webhook(request: Request):
             email = customer.get("email")
             if email:
                 supabase.table("APP_USER").update({
+                    "status": "canceled",
                     "expiration_date": None,
                     "update_date": now_iso,
                 }).eq("user_maile_adress", email).execute()

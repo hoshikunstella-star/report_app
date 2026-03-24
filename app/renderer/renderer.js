@@ -657,6 +657,10 @@ function applyFreeUI() {
   if (!panelSummary.hidden) updateTabs("transcribe");
 }
 
+const btnRepayWrap = document.getElementById("btnRepayWrap");
+const btnRepay = document.getElementById("btnRepay");
+let _pendingEmail = null;
+
 // ======= ログイン =======
 async function handleLogin() {
   const email = loginEmail.value.trim();
@@ -668,13 +672,22 @@ async function handleLogin() {
   btnLogin.disabled = true;
   btnLogin.textContent = "ログイン中…";
   loginError.textContent = "";
+  btnRepayWrap.hidden = true;
   try {
     const user = await window.gijiroku.login(email, password);
     loginModal.hidden = true;
     applyPaidUI(user.email, user.expiresAt);
     uiLogSuccess(`ログイン成功（${user.email}）`);
   } catch (e) {
-    loginError.textContent = e?.message || "ログインに失敗しました。";
+    const msg = e?.message || "ログインに失敗しました。";
+    if (msg.startsWith("PENDING:")) {
+      const parts = msg.split(":");
+      _pendingEmail = parts[1];
+      loginError.textContent = "決済が完了していません。下のボタンから決済を再開してください。";
+      btnRepayWrap.hidden = false;
+    } else {
+      loginError.textContent = msg;
+    }
   } finally {
     btnLogin.disabled = false;
     btnLogin.textContent = "ログイン";
@@ -688,6 +701,23 @@ loginPassword.addEventListener("keydown", (e) => {
 
 btnCloseLogin.addEventListener("click", () => {
   loginModal.hidden = true;
+  btnRepayWrap.hidden = true;
+});
+
+// 再決済ボタン
+btnRepay.addEventListener("click", async () => {
+  if (!_pendingEmail) return;
+  btnRepay.disabled = true;
+  btnRepay.textContent = "決済ページを開いています…";
+  try {
+    await window.gijiroku.createCheckoutSession(_pendingEmail);
+    loginError.textContent = "ブラウザで決済を完了後、再度ログインしてください。";
+  } catch (e) {
+    loginError.textContent = e?.message || "決済ページの表示に失敗しました。";
+  } finally {
+    btnRepay.disabled = false;
+    btnRepay.textContent = "決済を再開する";
+  }
 });
 
 // ログインモーダル → 登録モーダルへ

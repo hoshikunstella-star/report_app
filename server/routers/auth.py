@@ -2,6 +2,7 @@
 # Description: 認証エンドポイント（カスタムusersテーブル）
 
 import os
+import traceback
 from datetime import datetime, timezone, timedelta
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
@@ -29,7 +30,6 @@ class RegisterRequest(BaseModel):
 
 @router.post("/login")
 async def login(req: LoginRequest):
-    # usersテーブルからメールアドレスで検索
     try:
         res = supabase.table("APP_USER").select("*").eq("user_maile_adress", req.email).execute()
     except Exception as e:
@@ -47,12 +47,21 @@ async def login(req: LoginRequest):
     if not _bcrypt.checkpw(req.password.encode(), user["user_pass"].encode()):
         raise HTTPException(status_code=401, detail="メールアドレスまたはパスワードが正しくありません。")
 
-    # 有料プラン確認
+    status = user.get("status", "inactive")
+
+    # 決済途中
+    if status == "pending":
+        raise HTTPException(status_code=402, detail="決済が完了していません。", headers={"X-User-Status": "pending", "X-User-Email": req.email})
+
+    # 解約済み・未課金
+    if status in ("canceled", "inactive"):
+        raise HTTPException(status_code=403, detail="有料プランではありません。", headers={"X-User-Status": status})
+
+    # active の場合、有効期限確認
     exp_raw = user.get("expiration_date")
     if not exp_raw:
-        raise HTTPException(status_code=403, detail="有料プランではありません。")
+        raise HTTPException(status_code=403, detail="有料プランではありません。", headers={"X-User-Status": "inactive"})
 
-    # タイムゾーン付きで比較
     if isinstance(exp_raw, str):
         expiration = datetime.fromisoformat(exp_raw.replace("Z", "+00:00"))
     else:
@@ -60,7 +69,12 @@ async def login(req: LoginRequest):
 
     now = datetime.now(timezone.utc)
     if expiration <= now:
-        raise HTTPException(status_code=403, detail="有料プランの有効期限が切れています。")
+        # 期限切れ → inactive に更新
+        supabase.table("APP_USER").update({
+            "status": "inactive",
+            "update_date": now.isoformat(),
+        }).eq("user_id", user["user_id"]).execute()
+        raise HTTPException(status_code=403, detail="有料プランの有効期限が切れています。無料プランに切り替わりました。", headers={"X-User-Status": "inactive"})
 
     # JWT 生成（30日有効）
     token_exp = now + timedelta(days=JWT_EXPIRE_DAYS)
@@ -76,17 +90,20 @@ async def login(req: LoginRequest):
         "user_id": str(user["user_id"]),
         "email": user["user_maile_adress"],
         "expiration_date": expiration.isoformat(),
+        "status": status,
     }
 
 
 @router.post("/register")
 async def register(req: RegisterRequest):
-    import traceback
     try:
         # メールアドレス重複チェック
-        res = supabase.table("APP_USER").select("user_id").eq("user_maile_adress", req.email).execute()
+        res = supabase.table("APP_USER").select("user_id, status").eq("user_maile_adress", req.email).execute()
 
         if res.data:
+            existing_status = res.data[0].get("status", "inactive")
+            if existing_status == "pending":
+                raise HTTPException(status_code=409, detail="このメールアドレスは登録済みです（決済未完了）。ログイン画面から再決済してください。")
             raise HTTPException(status_code=409, detail="このメールアドレスは既に登録されています。")
 
         hashed = _bcrypt.hashpw(req.password.encode(), _bcrypt.gensalt()).decode()
@@ -96,6 +113,7 @@ async def register(req: RegisterRequest):
             "user_name": req.name,
             "user_pass": hashed,
             "user_maile_adress": req.email,
+            "status": "pending",
             "expiration_date": None,
             "valid_flag": True,
             "create_date": now_iso,
