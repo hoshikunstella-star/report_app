@@ -13,7 +13,7 @@ const { spawn } = require("child_process");
 // 開発時: プロジェクトルート直下の .env
 // 本番時: exe と同じフォルダの .env
 const envFile = app.isPackaged
-  ? path.join(path.dirname(process.execPath), ".env")
+  ? path.join(process.env.PORTABLE_EXECUTABLE_DIR || path.dirname(process.execPath), ".env")
   : path.join(__dirname, "..", ".env");
 require("dotenv").config({ path: envFile });
 
