@@ -779,7 +779,12 @@ async function handleRegister() {
     loginEmail.focus();
     uiLogSuccess("登録完了。ブラウザで決済を完了後、ログインしてください。");
   } catch (e) {
-    registerError.textContent = e?.message || "登録に失敗しました。";
+    const msg = e?.message || "登録に失敗しました。";
+    if (msg.includes("既に登録されています") || msg.includes("登録済みです")) {
+      alert("このメールアドレスは既に登録されています。");
+    } else {
+      registerError.textContent = msg;
+    }
   } finally {
     btnRegister.disabled = false;
     btnRegister.textContent = "登録して決済へ";
