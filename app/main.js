@@ -472,7 +472,11 @@ ipcMain.handle("transcribe-audio", async (_event, { audioPath, options = {} }) =
   const scriptDiarizePath = path.join(__dirname, "..", "stt", "diarize.py");
 
   const pythonExe = process.env.PYTHON || "python";
-  const extraEnv = { PYTHONUTF8: "1", PYTHONIOENCODING: "utf-8" };
+  const extraEnv = {
+    PYTHONUTF8: "1",
+    PYTHONIOENCODING: "utf-8",
+    HF_TOKEN: process.env.HF_TOKEN || "HF_TOKEN_PLACEHOLDER",
+  };
 
   if (!diarize) {
     const { code, stdout, stderr } = await runProcess(pythonExe, [scriptPlainPath, audioPath], extraEnv);

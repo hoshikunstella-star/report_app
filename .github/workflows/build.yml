@@ -1,0 +1,52 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Inject HF_TOKEN
+        run: |
+          node -e "const fs=require('fs'); let c=fs.readFileSync('app/main.js','utf8'); c=c.replace('HF_TOKEN_PLACEHOLDER','${{ secrets.HF_TOKEN }}'); fs.writeFileSync('app/main.js',c);"
+
+      - name: Build Windows
+        run: npm run build:win -- --publish always
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  build-mac:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Inject HF_TOKEN
+        run: |
+          node -e "const fs=require('fs'); let c=fs.readFileSync('app/main.js','utf8'); c=c.replace('HF_TOKEN_PLACEHOLDER','${{ secrets.HF_TOKEN }}'); fs.writeFileSync('app/main.js',c);"
+
+      - name: Build macOS
+        run: npm run build:mac -- --publish always
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
