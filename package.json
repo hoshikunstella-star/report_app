@@ -7,7 +7,8 @@
   "scripts": {
     "dev": "electron .",
     "start": "electron .",
-    "build:win": "electron-builder --win"
+    "build:win": "electron-builder --win",
+    "build:mac": "electron-builder --mac"
   },
   "devDependencies": {
     "electron": "^37.2.4",
@@ -30,11 +31,24 @@
         "nsis",
         "portable"
       ]
+    },
+    "mac": {
+      "target": [
+        { "target": "dmg", "arch": ["x64", "arm64"] },
+        { "target": "zip", "arch": ["x64", "arm64"] }
+      ],
+      "category": "public.app-category.productivity"
+    },
+    "publish": {
+      "provider": "github",
+      "owner": "hoshikunstella-star",
+      "repo": "report_app"
     }
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.79.0",
     "docx": "^9.6.1",
-    "dotenv": "^17.3.1"
+    "dotenv": "^17.3.1",
+    "electron-updater": "^6.8.3"
   }
 }

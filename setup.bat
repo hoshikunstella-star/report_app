@@ -109,15 +109,11 @@ if exist "%ENV_FILE%" (
     if /i not "%OVERWRITE%"=="y" goto :SETUP_DONE
 )
 
-REM .env の内容を構築
-set "ENV_CONTENT="
-
-echo  ----- AI要約（Claude API）の設定 -----
-echo  Anthropic の API キーを入力してください。
-echo  取得先: https://console.anthropic.com/
-echo  （使用しない場合は Enter でスキップ）
+echo  ----- サーバー接続の設定 -----
+echo  Railway サーバーの URL を入力してください。
+echo  （例: https://xxxx.up.railway.app）
 echo.
-set /p ANTHROPIC_KEY="Anthropic API キー (sk-ant-...): "
+set /p API_URL="API_BASE_URL: "
 
 echo.
 echo  ----- 話者分離（HuggingFace）の設定 -----
@@ -130,20 +126,15 @@ echo.
 set /p HF_KEY="HuggingFace トークン (hf_...): "
 
 REM .env ファイルに書き込み
-if not "%ANTHROPIC_KEY%"=="" (
-    echo ANTHROPIC_API_KEY=%ANTHROPIC_KEY%> "%ENV_FILE%"
+if not "%API_URL%"=="" (
+    echo API_BASE_URL=%API_URL%> "%ENV_FILE%"
 )
 if not "%HF_KEY%"=="" (
     echo HF_TOKEN=%HF_KEY%>> "%ENV_FILE%"
 )
 
-if not "%ANTHROPIC_KEY%"=="" (
-    echo.
-    echo  [OK] .env ファイルを作成しました: %ENV_FILE%
-) else (
-    echo.
-    echo  [情報] API キーはスキップしました。後から .env ファイルに追記できます。
-)
+echo.
+echo  [OK] .env ファイルを作成しました: %ENV_FILE%
 
 :SETUP_DONE
 echo.

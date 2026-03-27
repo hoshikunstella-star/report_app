@@ -8,19 +8,26 @@ const { app, BrowserWindow, dialog, ipcMain, shell } = require("electron");
 const path = require("path");
 const fs = require("fs");
 const { spawn } = require("child_process");
+const { autoUpdater } = require("electron-updater");
 
 // .env の読み込み
 // 開発時: プロジェクトルート直下の .env
-// 本番時: exe と同じフォルダの .env
-const envFile = app.isPackaged
-  ? path.join(process.env.PORTABLE_EXECUTABLE_DIR || path.dirname(process.execPath), ".env")
-  : path.join(__dirname, "..", ".env");
+// 本番時 Windows: exe と同じフォルダの .env
+// 本番時 Mac: ~/Library/Application Support/<AppName>/.env
+let envFile;
+if (!app.isPackaged) {
+  envFile = path.join(__dirname, "..", ".env");
+} else if (process.platform === "darwin") {
+  envFile = path.join(app.getPath("userData"), ".env");
+} else {
+  envFile = path.join(process.env.PORTABLE_EXECUTABLE_DIR || path.dirname(process.execPath), ".env");
+}
 require("dotenv").config({ path: envFile });
 
 let mainWindow;
 
 // サーバーモード設定
-const API_BASE_URL = (process.env.API_BASE_URL || "").replace(/\/+$/, "");
+const API_BASE_URL = (process.env.API_BASE_URL || "https://web-production-47d3e.up.railway.app").replace(/\/+$/, "");
 let authToken = null;
 
 // セッションファイルのパス（アプリ起動後に初期化）
@@ -376,6 +383,47 @@ ipcMain.handle("read-history-file", async (_event, { filePath }) => {
   return { bytes: data.buffer, byteOffset: data.byteOffset, byteLength: data.byteLength };
 });
 
+// 自動アップデート設定
+function setupAutoUpdater() {
+  // 開発モード・Portableは対象外
+  if (!app.isPackaged || process.env.PORTABLE_EXECUTABLE_DIR) return;
+
+  autoUpdater.autoDownload = false;
+
+  autoUpdater.on("update-available", (info) => {
+    dialog.showMessageBox(mainWindow, {
+      type: "info",
+      title: "アップデートがあります",
+      message: `新しいバージョン ${info.version} が利用可能です。今すぐダウンロードしますか？`,
+      buttons: ["ダウンロード", "後で"],
+      defaultId: 0,
+    }).then(({ response }) => {
+      if (response === 0) autoUpdater.downloadUpdate();
+    });
+  });
+
+  autoUpdater.on("update-downloaded", () => {
+    dialog.showMessageBox(mainWindow, {
+      type: "info",
+      title: "アップデート準備完了",
+      message: "ダウンロードが完了しました。アプリを再起動してアップデートを適用しますか？",
+      buttons: ["再起動して適用", "後で"],
+      defaultId: 0,
+    }).then(({ response }) => {
+      if (response === 0) autoUpdater.quitAndInstall();
+    });
+  });
+
+  autoUpdater.on("error", (err) => {
+    appendLog("error", `auto-updater error: ${err.message}`);
+  });
+
+  // 起動時にチェック
+  autoUpdater.checkForUpdates().catch((err) => {
+    appendLog("error", `checkForUpdates failed: ${err.message}`);
+  });
+}
+
 // アプリの準備完了時の処理
 app.whenReady().then(() => {
   // 保存済みセッションを復元
@@ -385,6 +433,7 @@ app.whenReady().then(() => {
     appendLog("info", `session restored: email=${saved.email}`);
   }
   createWindow();
+  setupAutoUpdater();
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
   });
