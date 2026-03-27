@@ -1,6 +1,6 @@
 {
   "name": "gijiroku-desktop",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "description": "Windowsデスクトップ議事録作成補助ツール（音声→文字起こし）",
   "main": "app/main.js",
